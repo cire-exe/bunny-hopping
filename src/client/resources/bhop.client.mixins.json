@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "com.kishi.bhop.mixin",
+	"client": [
+		"EntityAccessor",
+		"LivingEntityAccessor",
+		"LivingEntityJumpMixin",
+		"LivingEntityTravelMixin",
+		"MouseHandlerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "bhop",
+	"version": "${version}",
+	"name": "BHOP",
+	"description": "Classic FPS movement for Minecraft: a toggleable movement mode with real air strafing and bunny hopping. Install it on a server too to give everyone the same physics and set rules for the toggle.",
+	"authors": [
+		"KIshi"
+	],
+	"contact": {
+		"homepage": "https://github.com/cire-exe/bunny-hopping",
+		"sources": "https://github.com/cire-exe/bunny-hopping",
+		"issues": "https://github.com/cire-exe/bunny-hopping/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/bhop/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.kishi.bhop.BhopMod"
+		],
+		"client": [
+			"com.kishi.bhop.BhopClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "bhop.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": ">=0.162.0"
+	}
+}

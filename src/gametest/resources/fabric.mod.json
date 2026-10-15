@@ -1,0 +1,19 @@
+{
+	"schemaVersion": 1,
+	"id": "bhop-gametest",
+	"version": "1.0.0",
+	"name": "BHOP game tests",
+	"description": "End-to-end client tests for BHOP. Never shipped.",
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"com.kishi.bhop.gametest.SingleplayerGameTest",
+			"com.kishi.bhop.gametest.DedicatedServerGameTest"
+		]
+	},
+	"depends": {
+		"bhop": "*",
+		"fabric-client-gametest-api-v1": "*"
+	}
+}
