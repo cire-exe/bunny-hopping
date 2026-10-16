@@ -1,0 +1,106 @@
+# Builds the mod and uploads it to Modrinth as a new version.
+#
+# Runs on every pushed v* tag, such as v1.0.2. To release: set `version` in gradle.properties, add
+# a "## <version>" section to CHANGELOG.md, commit, then tag and push the tag. It can also be run by
+# hand from the Actions tab for a tag that already exists.
+#
+# Needs a MODRINTH_TOKEN repository secret: a Modrinth personal access token with the
+# "Create versions" scope.
+name: Publish to Modrinth
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish, such as v1.0.1
+        required: true
+
+permissions:
+  contents: read
+
+concurrency: publish-${{ inputs.tag || github.ref_name }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      MODRINTH_PROJECT_ID: 4npyLkSl
+      FABRIC_API_PROJECT_ID: P7dR8mSH
+      GAME_VERSION: "26.3"
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+          # Every branch and tag, so the changelog can be read from the commit this workflow runs from.
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Check the tag matches the mod version
+        run: |
+          VERSION=$(sed -n 's/^version=//p' gradle.properties | tr -d '\r')
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Tag $TAG does not match version=$VERSION in gradle.properties"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Build and test
+        run: ./gradlew build
+
+      - name: Read the changelog
+        # From the commit this workflow runs from rather than the tag, so a tag made before its
+        # changelog was written can still be published by hand.
+        run: |
+          git show "$GITHUB_SHA:CHANGELOG.md" \
+            | awk -v heading="## $VERSION" '{ sub(/\r$/, "") } $0 == heading { found = 1; next } found && /^## / { exit } found' \
+            | sed '/./,$!d' > changelog.md
+          if [ ! -s changelog.md ]; then
+            echo "::error::CHANGELOG.md has no '## $VERSION' section"
+            exit 1
+          fi
+          cat changelog.md
+
+      - name: Upload to Modrinth
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          if [ -z "$MODRINTH_TOKEN" ]; then
+            echo "::error::The MODRINTH_TOKEN repository secret is not set"
+            exit 1
+          fi
+
+          jq -n \
+            --arg project "$MODRINTH_PROJECT_ID" \
+            --arg version "$VERSION" \
+            --arg game "$GAME_VERSION" \
+            --arg fabricApi "$FABRIC_API_PROJECT_ID" \
+            --rawfile changelog changelog.md \
+            '{
+              project_id: $project,
+              name: ("BHOP " + $version),
+              version_number: $version,
+              changelog: $changelog,
+              version_type: "release",
+              loaders: ["fabric"],
+              game_versions: [$game],
+              dependencies: [{ project_id: $fabricApi, dependency_type: "required" }],
+              featured: true,
+              file_parts: ["jar"],
+              primary_file: "jar"
+            }' > version.json
+
+          curl --fail-with-body --silent --show-error \
+            -X POST https://api.modrinth.com/v2/version \
+            -H "Authorization: $MODRINTH_TOKEN" \
+            -H "User-Agent: cire-exe/bunny-hopping (GitHub Actions)" \
+            -F "data=<version.json;type=application/json" \
+            -F "jar=@build/libs/bhop-$VERSION.jar;type=application/java-archive"
