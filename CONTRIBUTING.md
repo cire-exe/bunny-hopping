@@ -3,6 +3,21 @@
 How to build, test and release BHOP, and where things live. For what the mod does and how to use
 it, see the [README](README.md).
 
+## Pull requests
+
+Bug reports and ideas go through the [issue forms](https://github.com/cire-exe/bunny-hopping/issues/new/choose).
+For a larger change, open an issue first so the approach can be agreed before you write it.
+
+1. Fork the repository and create a branch from `main`.
+2. Make the change. A change to the movement feel should come with a unit test (see
+   [Testing](#testing)).
+3. Run `./gradlew build`, which compiles and runs the unit tests.
+4. Open a pull request against `main` describing what changed and why.
+
+Leave `CHANGELOG.md` and the version number alone; they are updated when a release is made.
+The [Build](.github/workflows/build.yml) workflow runs on every pull request, and a first-time
+contributor's run starts once a maintainer approves it.
+
 ## Building
 
 Requires **JDK 25** - Minecraft 26.3 and Fabric Loom will not build on anything older, and Loom
@@ -89,6 +104,12 @@ Actions tab (**Run workflow**, with the tag name) rather than moving the tag.
 If the Modrinth upload fails after the GitHub release was made, such as on an expired token, fix
 it and run the workflow by hand the same way: the existing GitHub release is left alone and only
 the upload is repeated.
+
+`v*` tags are protected by a repository ruleset: once pushed, they cannot be moved or deleted, so
+a published version always points at the code it was built from. A release with a bug in its code
+is fixed by releasing the next patch version, not by retagging. `main` is protected the same way
+against force pushes and deletion. Both rulesets are under **Settings → Rules → Rulesets**, should
+one ever need to be turned off briefly.
 
 Uploading needs the `MODRINTH_TOKEN` repository secret: a Modrinth
 [personal access token](https://modrinth.com/settings/pats) with only the **Create versions**
