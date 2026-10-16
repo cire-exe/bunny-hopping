@@ -1,0 +1,10 @@
+# LF everywhere, whatever core.autocrlf is set to, so scripts such as gradlew run on Linux and
+# macOS however the repository was checked out.
+* text=auto eol=lf
+
+# Windows batch files need CRLF to run reliably.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.jar binary
+*.png binary

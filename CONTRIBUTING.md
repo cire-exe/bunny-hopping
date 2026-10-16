@@ -43,6 +43,9 @@ pins the new behaviour down.
 
 They are not packaged into the mod jar.
 
+The [Build](.github/workflows/build.yml) workflow runs `./gradlew build`, and so the unit tests, on
+every push to `main` and every pull request, and keeps the jar as a download on the run's page.
+
 ### Game tests
 
 End-to-end tests live in `src/gametest`. They start a real client in its own folder
@@ -57,9 +60,9 @@ before a release:
 
 ## Releasing
 
-Releases are published to [Modrinth](https://modrinth.com/) by the
-[Publish to Modrinth](.github/workflows/publish.yml) workflow whenever a `v*` tag is pushed. It
-builds and tests the mod, then uploads the jar with that version's changelog.
+Releases are published by the [Publish release](.github/workflows/publish.yml) workflow whenever
+a `v*` tag is pushed. It builds and tests the mod, creates a GitHub release with the jar attached,
+then uploads the jar to [Modrinth](https://modrinth.com/). Both get that version's changelog.
 
 Versions follow [semantic versioning](https://semver.org/): bug fixes bump the patch number
 (1.0.1), new features or settings the minor number (1.1.0), and changes that break existing
@@ -67,8 +70,8 @@ configs or servers the major number (2.0.0).
 
 1. Run the game tests: `./gradlew runClientGameTest`.
 2. Set `version=` in `gradle.properties`.
-3. Add a `## <version>` section to the top of `CHANGELOG.md`. Its contents become the changelog on
-   Modrinth.
+3. Add a `## <version>` section to the top of `CHANGELOG.md`. Its contents become the release
+   notes on GitHub and the changelog on Modrinth.
 4. Commit, tag and push:
 
    ```bash
@@ -82,6 +85,10 @@ configs or servers the major number (2.0.0).
 The workflow stops with an error, before uploading anything, if the tag does not match `version=`
 or `CHANGELOG.md` has no section for it. Fix the cause, then run the workflow by hand from the
 Actions tab (**Run workflow**, with the tag name) rather than moving the tag.
+
+If the Modrinth upload fails after the GitHub release was made, such as on an expired token, fix
+it and run the workflow by hand the same way: the existing GitHub release is left alone and only
+the upload is repeated.
 
 Uploading needs the `MODRINTH_TOKEN` repository secret: a Modrinth
 [personal access token](https://modrinth.com/settings/pats) with only the **Create versions**
@@ -136,7 +143,8 @@ src/client/java/com/kishi/bhop/
 src/test/java/com/kishi/bhop/movement/   unit tests for the movement maths
 src/gametest/java/com/kishi/bhop/gametest/   end-to-end client and server tests
 
-.github/workflows/publish.yml   builds and uploads tagged releases to Modrinth
+.github/workflows/build.yml     builds and tests every push and pull request
+.github/workflows/publish.yml   publishes tagged releases to GitHub and Modrinth
 CHANGELOG.md                    one section per release, published with it
 ```
 

@@ -4,6 +4,16 @@ A Fabric mod for **Minecraft 26.3** that adds classic FPS movement: bunny hoppin
 strafing. Install it on your client to play; install it on a server as well to give everyone the
 same physics and set rules for the toggle (see [Multiplayer](#multiplayer)).
 
+## Installation
+
+Requires **Minecraft 26.3**, [Fabric Loader](https://fabricmc.net/use/) 0.19.5 or newer and
+[Fabric API](https://modrinth.com/mod/fabric-api) 0.162.0 or newer.
+
+Download the jar from Modrinth or from
+[GitHub Releases](https://github.com/cire-exe/bunny-hopping/releases) and put it, with Fabric API,
+in the `mods` folder of your game or server. What changed in each version is in
+[CHANGELOG.md](CHANGELOG.md).
+
 ## Features
 
 ### Bunny hop mode
@@ -41,7 +51,8 @@ the mode blends with ordinary Minecraft terrain. Everything vanilla feeds into t
 
 - **Effects** - Speed, Slowness, Jump Boost, Slow Falling and Levitation
 - **Input** - walking is slower than sprinting, and sneaking, crawling, eating or drawing a bow slow
-  you down
+  you down on the ground. Air strafing ignores them, so you can still turn while eating or blocking
+  mid-hop
 - **Blocks** - ice is slippery and honey cuts your jump. Blocks that slow you every tick - soul
   sand, honey and slime underfoot, cobwebs, berry bushes, powder snow - hand movement back to
   vanilla while they hold you, as water and ladders do, so they slow you exactly as much as usual
