@@ -33,7 +33,7 @@ jobs:
       GAME_VERSION: "26.3"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
           # Every branch and tag, so the changelog can be read from the commit this workflow runs from.
