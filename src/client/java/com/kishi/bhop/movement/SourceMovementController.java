@@ -105,8 +105,8 @@ public final class SourceMovementController {
 			}
 		} else {
 			HopTracker.recordAirTurn(yaws, input.left());
-			if (wishSpeed > 0.0D) {
-				velocity = airStrafe(velocity, input, yaws, wishSpeed, physics);
+			if (!input.isEmpty()) {
+				velocity = airStrafe(velocity, input, yaws, airWishSpeed(physics, speedFactor), physics);
 			}
 		}
 
@@ -176,6 +176,18 @@ public final class SourceMovementController {
 
 		final double ceiling = Math.max(speedBefore, physics.sprintJumpSpeed * speedFactor);
 		return SourcePhysics.clampHorizontalSpeed(boosted, ceiling);
+	}
+
+	/**
+	 * Wish speed for air strafing, which ignores input slowdowns such as sneaking, eating or
+	 * blocking with a shield.
+	 *
+	 * <p>Air acceleration per step scales with the wish speed. Using an item cuts the input to a
+	 * fifth, which leaves far too little acceleration to turn the velocity, so the player could only
+	 * fly straight. The slowdowns still apply on the ground.
+	 */
+	private static double airWishSpeed(final PhysicsSettings physics, final double speedFactor) {
+		return physics.maxGroundSpeed * speedFactor;
 	}
 
 	/**
