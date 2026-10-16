@@ -40,9 +40,6 @@ public final class SourceMovementController {
 
 	private static final double TICKS_PER_SECOND = SharedConstants.TICKS_PER_SECOND;
 
-	/** One Minecraft tick, in seconds. */
-	private static final double TICK_SECONDS = 1.0D / TICKS_PER_SECOND;
-
 	/** Below this a jump has no height at all, as vanilla treats it. */
 	private static final double MIN_JUMP_POWER = 1.0E-5D;
 
@@ -87,27 +84,13 @@ public final class SourceMovementController {
 			JumpInput.consume();
 		}
 
-		final double wishSpeed = input.isEmpty() ? 0.0D : physics.maxGroundSpeed * speedFactor * input.scale();
-
+		// 1-2. Friction and acceleration on the ground, air strafing off it.
 		if (onGround) {
-			final double surface = VanillaModifiers.surfaceFriction(player);
-
-			// 1. Friction, but never on a tick the player leaves the ground. Skipping it is the whole
-			// trick: land and jump on the same tick and none of the speed is scrubbed off.
-			if (!jumping) {
-				velocity = SourcePhysics.applyFriction(velocity, physics.friction * surface, stopSpeed(physics, input), TICK_SECONDS);
-			}
-
-			// 2. Acceleration towards the wish direction.
-			if (wishSpeed > 0.0D) {
-				velocity = SourcePhysics.accelerate(
-						velocity, input.direction(player.getYRot()), wishSpeed, physics.groundAccelerate * surface, TICK_SECONDS);
-			}
+			velocity = MovementStep.ground(
+					velocity, input, player.getYRot(), speedFactor, VanillaModifiers.surfaceFriction(player), jumping, physics);
 		} else {
 			HopTracker.recordAirTurn(yaws, input.left());
-			if (!input.isEmpty()) {
-				velocity = airStrafe(velocity, input, yaws, airWishSpeed(physics, speedFactor), physics);
-			}
+			velocity = MovementStep.air(velocity, input, yaws, speedFactor, physics);
 		}
 
 		// 3. Jump, after acceleration so the landing tick still contributes ground speed.
@@ -131,22 +114,6 @@ public final class SourceMovementController {
 		player.setDeltaMovement(resolved.x, VanillaModifiers.nextVerticalVelocity(player, resolved.y, physics.gravityScale), resolved.z);
 
 		return true;
-	}
-
-	/**
-	 * Air acceleration across the tick's sub-steps, each towards where the view faced at the end of
-	 * that sub-step.
-	 */
-	private static Vec3 airStrafe(
-			Vec3 velocity, final MoveInput input, final float[] yaws, final double wishSpeed, final PhysicsSettings physics) {
-		final int steps = yaws.length - 1;
-		final double dt = TICK_SECONDS / steps;
-		for (int k = 1; k <= steps; k++) {
-			velocity = SourcePhysics.airAccelerate(
-					velocity, input.direction(yaws[k]), wishSpeed, physics.airAccelerate, airWishSpeedCap(physics, velocity), dt);
-		}
-
-		return velocity;
 	}
 
 	/**
@@ -176,46 +143,6 @@ public final class SourceMovementController {
 
 		final double ceiling = Math.max(speedBefore, physics.sprintJumpSpeed * speedFactor);
 		return SourcePhysics.clampHorizontalSpeed(boosted, ceiling);
-	}
-
-	/**
-	 * Wish speed for air strafing, which ignores input slowdowns such as sneaking, eating or
-	 * blocking with a shield.
-	 *
-	 * <p>Air acceleration per step scales with the wish speed. Using an item cuts the input to a
-	 * fifth, which leaves far too little acceleration to turn the velocity, so the player could only
-	 * fly straight. The slowdowns still apply on the ground.
-	 */
-	private static double airWishSpeed(final PhysicsSettings physics, final double speedFactor) {
-		return physics.maxGroundSpeed * speedFactor;
-	}
-
-	/**
-	 * Friction's stop speed floor, scaled down with slowed input such as sneaking or using an item.
-	 *
-	 * <p>Below the floor friction removes a flat amount per tick. At full stop speed that is more
-	 * than ground acceleration can add towards a sneaking wish speed, so the player would crawl at a
-	 * fraction of vanilla's sneak speed. Scaling it with the input keeps the floor in proportion to
-	 * the wish speed. With no input the full floor applies, so stopping is unchanged.
-	 */
-	private static double stopSpeed(final PhysicsSettings physics, final MoveInput input) {
-		return input.isEmpty() ? physics.stopSpeed : physics.stopSpeed * input.scale();
-	}
-
-	/**
-	 * Air wish speed cap for this sub-step, boosted while still below the ramp-up speed.
-	 *
-	 * <p>Scaling the cap is the only thing that actually speeds up the climb. Source computes the
-	 * per-step gain as the smaller of (airAccelerate * wishSpeed * dt) and the cap; with the
-	 * shipped numbers the first term is above the cap, so the cap is the binding constraint and
-	 * raising airAccelerate on its own would have no visible effect.
-	 */
-	private static double airWishSpeedCap(final PhysicsSettings physics, final Vec3 velocity) {
-		if (!physics.rampUp || SourcePhysics.horizontalSpeed(velocity) >= physics.rampUpSpeed) {
-			return physics.maxAirWishSpeed;
-		}
-
-		return physics.maxAirWishSpeed * physics.rampUpMultiplier;
 	}
 
 	/** Horizontal components from blocks per tick to blocks per second. */

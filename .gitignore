@@ -16,3 +16,6 @@ out/
 # Fabric Loom
 run/
 remappedSrc/
+
+# Minecraft's logger, started by the unit tests
+logs/
