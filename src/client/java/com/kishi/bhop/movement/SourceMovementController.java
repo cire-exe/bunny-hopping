@@ -95,7 +95,7 @@ public final class SourceMovementController {
 			// 1. Friction, but never on a tick the player leaves the ground. Skipping it is the whole
 			// trick: land and jump on the same tick and none of the speed is scrubbed off.
 			if (!jumping) {
-				velocity = SourcePhysics.applyFriction(velocity, physics.friction * surface, physics.stopSpeed, TICK_SECONDS);
+				velocity = SourcePhysics.applyFriction(velocity, physics.friction * surface, stopSpeed(physics, input), TICK_SECONDS);
 			}
 
 			// 2. Acceleration towards the wish direction.
@@ -176,6 +176,18 @@ public final class SourceMovementController {
 
 		final double ceiling = Math.max(speedBefore, physics.sprintJumpSpeed * speedFactor);
 		return SourcePhysics.clampHorizontalSpeed(boosted, ceiling);
+	}
+
+	/**
+	 * Friction's stop speed floor, scaled down with slowed input such as sneaking or using an item.
+	 *
+	 * <p>Below the floor friction removes a flat amount per tick. At full stop speed that is more
+	 * than ground acceleration can add towards a sneaking wish speed, so the player would crawl at a
+	 * fraction of vanilla's sneak speed. Scaling it with the input keeps the floor in proportion to
+	 * the wish speed. With no input the full floor applies, so stopping is unchanged.
+	 */
+	private static double stopSpeed(final PhysicsSettings physics, final MoveInput input) {
+		return input.isEmpty() ? physics.stopSpeed : physics.stopSpeed * input.scale();
 	}
 
 	/**
