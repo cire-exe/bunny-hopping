@@ -145,6 +145,8 @@ src/gametest/java/com/kishi/bhop/gametest/   end-to-end client and server tests
 
 .github/workflows/build.yml     builds and tests every push and pull request
 .github/workflows/publish.yml   publishes tagged releases to GitHub and Modrinth
+.github/ISSUE_TEMPLATE/         bug report and feature request forms
+.github/dependabot.yml          monthly pull requests for new GitHub Actions versions
 CHANGELOG.md                    one section per release, published with it
 ```
 

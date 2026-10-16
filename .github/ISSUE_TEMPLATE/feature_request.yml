@@ -1,0 +1,19 @@
+name: Feature request
+description: An idea for something BHOP could do.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: The feature or change, and how you imagine it working.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: What it would help with, or what is awkward without it.
+    validations:
+      required: true

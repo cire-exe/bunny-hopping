@@ -1,0 +1,82 @@
+name: Bug report
+description: Something in BHOP doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please check the [open issues](https://github.com/cire-exe/bunny-hopping/issues) first, in case it's already known.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and what you expected instead.
+      placeholder: Sneaking in bhop mode is much slower than vanilla sneaking.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce
+      description: The steps that make it happen, as exactly as you can.
+      placeholder: |
+        1. Turn on bunny hop mode
+        2. Hold sneak and walk forward
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: bhop-version
+    attributes:
+      label: BHOP version
+      placeholder: "1.0.1"
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft-version
+    attributes:
+      label: Minecraft version
+      placeholder: "26.3"
+    validations:
+      required: true
+
+  - type: input
+    id: loader-version
+    attributes:
+      label: Fabric Loader and Fabric API versions
+      placeholder: Loader 0.19.5, Fabric API 0.162.0+26.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does it happen?
+      options:
+        - Singleplayer
+        - LAN world
+        - Server with BHOP installed
+        - Server without BHOP
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: other-mods
+    attributes:
+      label: Other mods
+      description: Every other mod installed, or "none". Movement, input and anti-cheat mods matter most.
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        Attach or paste `logs/latest.log` from your game folder (and the server's, if it happens on a server). For a crash, the file from `crash-reports/` instead.
+      render: text

@@ -1,0 +1,17 @@
+# Opens a pull request when an action used by the workflows has a new version, so they don't fall
+# behind - such as onto a deprecated Node.js runtime. The Build workflow runs on each one.
+#
+# Gradle dependencies are left out on purpose: Fabric Loom, Loader and API versions follow
+# Minecraft releases, and are updated by hand along with it.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    # One pull request for all of them, rather than one per action.
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "CI"
