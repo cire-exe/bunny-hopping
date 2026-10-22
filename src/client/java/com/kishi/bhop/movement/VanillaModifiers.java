@@ -4,12 +4,12 @@ import com.kishi.bhop.mixin.EntityAccessor;
 import com.kishi.bhop.mixin.LivingEntityAccessor;
 
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SlimeBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * The parts of vanilla's movement that Source movement keeps: status effects, attributes and the
@@ -66,10 +66,9 @@ final class VanillaModifiers {
 	 * {@code 0.42} on slime. It scales both ground friction and ground acceleration, as in Source,
 	 * which is also the ratio vanilla scales its own ground acceleration by.
 	 */
-	static double surfaceFriction(final LocalPlayer player) {
-		final BlockPos below = player.getBlockPosBelowThatAffectsMyMovement();
+	static double surfaceFriction(final LocalPlayer player, final BlockState below) {
 		final float blockFriction = modifiedFriction(
-				player.level().getBlockState(below).getBlock().getFriction(),
+				below.getBlock().getFriction(),
 				player.getAttributeValue(Attributes.FRICTION_MODIFIER));
 		if (blockFriction <= DEFAULT_BLOCK_FRICTION) {
 			return 1.0D;
@@ -89,15 +88,21 @@ final class VanillaModifiers {
 	 * left to vanilla, as water and ladders are. Ice and other slippery blocks are not slowdowns and
 	 * stay with Source movement, through {@link #surfaceFriction}.
 	 */
-	static boolean slowedByBlock(final LocalPlayer player) {
+	static boolean slowedByBlock(final LocalPlayer player, final BlockState below) {
 		final EntityAccessor entity = (EntityAccessor) player;
 		if (entity.bhop$getStuckSpeedMultiplier().lengthSqr() > STUCK_EPSILON) {
 			return true;
 		}
 
-		return player.onGround()
-				&& (entity.bhop$getBlockSpeedFactor() < 1.0F
-						|| player.level().getBlockState(player.getBlockPosBelowThatAffectsMyMovement()).getBlock() instanceof SlimeBlock);
+		return player.onGround() && (entity.bhop$getBlockSpeedFactor() < 1.0F || below.getBlock() instanceof SlimeBlock);
+	}
+
+	/**
+	 * The block whose friction and slowdown apply to the player, read once per tick and handed to
+	 * {@link #slowedByBlock} and {@link #surfaceFriction}.
+	 */
+	static BlockState blockBelow(final LocalPlayer player) {
+		return player.level().getBlockState(player.getBlockPosBelowThatAffectsMyMovement());
 	}
 
 	/** Vanilla's jump power in blocks per tick: Jump Boost, honey blocks and the jump attribute. */

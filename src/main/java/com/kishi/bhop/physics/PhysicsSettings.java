@@ -163,10 +163,12 @@ public final class PhysicsSettings {
 				return settings;
 			});
 
+	/** The shipped values, which repairs fall back to. Only ever read. */
+	private static final PhysicsSettings DEFAULTS = new PhysicsSettings();
+
 	/** Repairs anything a hand edit, or a remote server, could have broken. */
 	public void sanitize() {
-		final PhysicsSettings defaults = new PhysicsSettings();
-		FIELDS.forEach(field -> field.sanitize(this, defaults));
+		FIELDS.forEach(field -> field.sanitize(this, DEFAULTS));
 	}
 
 	public PhysicsSettings copy() {

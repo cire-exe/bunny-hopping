@@ -35,17 +35,22 @@ public final class Values {
 	}
 
 	public static float atLeast(final String key, final float value, final float min, final float fallback) {
+		return inRange(key, value, min, Float.MAX_VALUE, fallback);
+	}
+
+	/** The float twin of the double version, kept separate so the log shows the value as written. */
+	public static float inRange(final String key, final float value, final float min, final float max, final float fallback) {
 		if (!Float.isFinite(value)) {
 			warnReplaced(key, value, fallback);
 			return fallback;
 		}
 
-		if (value < min) {
-			warnReplaced(key, value, min);
-			return min;
+		final float clamped = Math.clamp(value, min, max);
+		if (clamped != value) {
+			warnReplaced(key, value, clamped);
 		}
 
-		return value;
+		return clamped;
 	}
 
 	public static int atLeast(final String key, final int value, final int min) {

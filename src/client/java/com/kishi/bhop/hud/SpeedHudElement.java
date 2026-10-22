@@ -29,6 +29,13 @@ public final class SpeedHudElement implements HudElement {
 	/** Gap between the speedometer's lines, in unscaled font pixels. */
 	private static final int LINE_SPACING = 1;
 
+	/**
+	 * The last readout and the speed it shows. The speed only changes once a tick, so most frames
+	 * reuse the text instead of formatting it again.
+	 */
+	private double shownSpeed = Double.NaN;
+	private Component shownText = Component.empty();
+
 	@Override
 	public void extractRenderState(final GuiGraphicsExtractor graphics, final DeltaTracker deltaTracker) {
 		final Minecraft client = Minecraft.getInstance();
@@ -41,7 +48,12 @@ public final class SpeedHudElement implements HudElement {
 		final LocalPlayer player = client.player;
 		final double blocksPerSecond =
 				Math.hypot(player.getX() - player.xo, player.getZ() - player.zo) * SharedConstants.TICKS_PER_SECOND;
-		drawLine(graphics, Component.literal("%.2f b/s".formatted(blocksPerSecond)), 0);
+		if (blocksPerSecond != this.shownSpeed) {
+			this.shownSpeed = blocksPerSecond;
+			this.shownText = Component.literal("%.2f b/s".formatted(blocksPerSecond));
+		}
+
+		drawLine(graphics, this.shownText, 0);
 	}
 
 	/**

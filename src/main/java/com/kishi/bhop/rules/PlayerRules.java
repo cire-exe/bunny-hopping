@@ -58,4 +58,24 @@ public record PlayerRules(
 	public boolean resolve(final boolean enabled) {
 		return this.forcedOn() || this.permitsMode() && enabled;
 	}
+
+	/**
+	 * Why a toggle has to be turned down under these rules, or {@code null} if it is fine.
+	 *
+	 * <p>The client asks before sending a toggle and the server asks again on receiving it. Each
+	 * times the cooldown its own way, so it only passes in whether the cooldown is still running.
+	 *
+	 * @param coolingDown whether the player toggled too recently
+	 */
+	public Refusal refusal(final boolean coolingDown) {
+		if (!this.allowed) {
+			return Refusal.NOT_ALLOWED;
+		}
+
+		return switch (this.policy) {
+			case FORCED_ON -> Refusal.FORCED_ON;
+			case DISABLED -> Refusal.DISABLED;
+			case OPTIONAL -> coolingDown ? Refusal.COOLDOWN : null;
+		};
+	}
 }

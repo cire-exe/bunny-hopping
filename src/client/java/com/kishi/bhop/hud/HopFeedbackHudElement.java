@@ -30,6 +30,14 @@ public final class HopFeedbackHudElement implements HudElement {
 	private static final int GOOD_SYNC = 80;
 	private static final int FAIR_SYNC = 50;
 
+	/**
+	 * The last line built, and the hop and toggles it was built from. A hop is reported once and
+	 * then stays on screen for seconds, so most frames reuse the line instead of building it again.
+	 */
+	private HopTracker.Hop shownHop;
+	private int shownParts;
+	private Component shownLine = Component.empty();
+
 	@Override
 	public void extractRenderState(final GuiGraphicsExtractor graphics, final DeltaTracker deltaTracker) {
 		final HopTracker.Hop hop = HopTracker.lastHop();
@@ -38,6 +46,19 @@ public final class HopFeedbackHudElement implements HudElement {
 		}
 
 		final ModConfig.Hud cfg = ConfigManager.get().hud;
+		final int parts = (cfg.showGain ? 1 : 0) | (cfg.showHopTiming ? 2 : 0) | (cfg.showSync ? 4 : 0);
+		if (hop != this.shownHop || parts != this.shownParts) {
+			this.shownHop = hop;
+			this.shownParts = parts;
+			this.shownLine = line(hop, cfg);
+		}
+
+		if (!this.shownLine.getSiblings().isEmpty()) {
+			SpeedHudElement.drawLine(graphics, this.shownLine, 1);
+		}
+	}
+
+	private static Component line(final HopTracker.Hop hop, final ModConfig.Hud cfg) {
 		final MutableComponent line = Component.empty();
 		if (cfg.showGain) {
 			append(line, Component.literal("%+.2f".formatted(hop.gain())).withColor(hop.gain() >= 0.0D ? GREEN : RED));
@@ -51,9 +72,7 @@ public final class HopFeedbackHudElement implements HudElement {
 			append(line, Component.translatable("bhop.hud.sync", hop.syncPercent()).withColor(syncColour(hop.syncPercent())));
 		}
 
-		if (!line.getSiblings().isEmpty()) {
-			SpeedHudElement.drawLine(graphics, line, 1);
-		}
+		return line;
 	}
 
 	private static Component timing(final HopTracker.Hop hop) {

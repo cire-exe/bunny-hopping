@@ -4,6 +4,9 @@ import static com.kishi.bhop.config.Values.atLeast;
 import static com.kishi.bhop.config.Values.inRange;
 import static com.kishi.bhop.config.Values.orDefault;
 
+import com.google.gson.JsonObject;
+import com.kishi.bhop.BhopMod;
+import com.kishi.bhop.physics.PhysicsSetting;
 import com.kishi.bhop.physics.PhysicsSettings;
 import com.kishi.bhop.rules.ServerRules;
 
@@ -38,6 +41,31 @@ public final class ModConfig {
 		this.physics.sanitize();
 		this.movement.sanitize();
 		this.hud.sanitize();
+	}
+
+	/**
+	 * Moves the physics values out of {@code movement} into their own {@code physics} section.
+	 *
+	 * <p>Files written before servers could share physics kept them under {@code movement}, with the
+	 * same names they have now. Moving them keeps a player's own tuning instead of resetting it.
+	 *
+	 * @return whether anything was moved, so the file is rewritten in the new layout
+	 */
+	static boolean migrate(final JsonObject tree) {
+		if (tree.has("physics") || !(tree.get("movement") instanceof JsonObject movement)) {
+			return false;
+		}
+
+		final JsonObject physics = new JsonObject();
+		for (final PhysicsSetting field : PhysicsSettings.FIELDS) {
+			if (movement.has(field.name())) {
+				physics.add(field.name(), movement.remove(field.name()));
+			}
+		}
+
+		tree.add("physics", physics);
+		BhopMod.LOGGER.info("Moved {} physics values in the config to their own section", physics.size());
+		return true;
 	}
 
 	/**

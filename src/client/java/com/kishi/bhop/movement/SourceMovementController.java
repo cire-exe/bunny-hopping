@@ -8,6 +8,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -38,8 +39,6 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class SourceMovementController {
 
-	private static final double TICKS_PER_SECOND = SharedConstants.TICKS_PER_SECOND;
-
 	/** Below this a jump has no height at all, as vanilla treats it. */
 	private static final double MIN_JUMP_POWER = 1.0E-5D;
 
@@ -52,7 +51,7 @@ public final class SourceMovementController {
 	 * <p>Shared with the jump mixin so both hooks agree on exactly when vanilla is suppressed.
 	 */
 	public static boolean isHandling(final LocalPlayer player) {
-		return BhopMode.isActive() && isEligible(player);
+		return BhopMode.isActive() && isEligible(player, VanillaModifiers.blockBelow(player));
 	}
 
 	/**
@@ -62,11 +61,14 @@ public final class SourceMovementController {
 	 * @return {@code true} if this class handled movement and vanilla should be cancelled
 	 */
 	public static boolean handleTravel(final LocalPlayer player, final Vec3 travelInput) {
-		if (!isHandling(player)) {
-			JumpInput.reset();
-			ViewSampler.reset();
-			HopTracker.reset();
-			return false;
+		// The same checks as isHandling, but the block underfoot is looked up once and reused below.
+		if (!BhopMode.isActive()) {
+			return decline();
+		}
+
+		final BlockState below = VanillaModifiers.blockBelow(player);
+		if (!isEligible(player, below)) {
+			return decline();
 		}
 
 		final PhysicsSettings physics = ServerSession.physics();
@@ -87,7 +89,7 @@ public final class SourceMovementController {
 		// 1-2. Friction and acceleration on the ground, air strafing off it.
 		if (onGround) {
 			velocity = MovementStep.ground(
-					velocity, input, player.getYRot(), speedFactor, VanillaModifiers.surfaceFriction(player), jumping, physics);
+					velocity, input, player.getYRot(), speedFactor, VanillaModifiers.surfaceFriction(player, below), jumping, physics);
 		} else {
 			HopTracker.recordAirTurn(yaws, input.left());
 			velocity = MovementStep.air(velocity, input, yaws, speedFactor, physics);
@@ -114,6 +116,14 @@ public final class SourceMovementController {
 		player.setDeltaMovement(resolved.x, VanillaModifiers.nextVerticalVelocity(player, resolved.y, physics.gravityScale), resolved.z);
 
 		return true;
+	}
+
+	/** Leaves the tick to vanilla, dropping anything pending so it cannot fire when the mode resumes. */
+	private static boolean decline() {
+		JumpInput.reset();
+		ViewSampler.reset();
+		HopTracker.reset();
+		return false;
 	}
 
 	/**
@@ -147,12 +157,12 @@ public final class SourceMovementController {
 
 	/** Horizontal components from blocks per tick to blocks per second. */
 	private static Vec3 toPerSecond(final Vec3 perTick) {
-		return new Vec3(perTick.x * TICKS_PER_SECOND, perTick.y, perTick.z * TICKS_PER_SECOND);
+		return new Vec3(perTick.x * SharedConstants.TICKS_PER_SECOND, perTick.y, perTick.z * SharedConstants.TICKS_PER_SECOND);
 	}
 
 	/** Horizontal components from blocks per second back to blocks per tick. */
 	private static Vec3 toPerTick(final Vec3 perSecond) {
-		return new Vec3(perSecond.x / TICKS_PER_SECOND, perSecond.y, perSecond.z / TICKS_PER_SECOND);
+		return new Vec3(perSecond.x / SharedConstants.TICKS_PER_SECOND, perSecond.y, perSecond.z / SharedConstants.TICKS_PER_SECOND);
 	}
 
 	/**
@@ -162,7 +172,7 @@ public final class SourceMovementController {
 	 * vehicles, spectator - is left to vanilla so the mode never breaks normal play. So are blocks
 	 * that slow the player every tick; see {@link VanillaModifiers#slowedByBlock}.
 	 */
-	private static boolean isEligible(final LocalPlayer player) {
+	private static boolean isEligible(final LocalPlayer player, final BlockState below) {
 		return !player.isSpectator()
 				&& !player.getAbilities().flying
 				&& !player.isFallFlying()
@@ -172,6 +182,6 @@ public final class SourceMovementController {
 				&& !player.isSwimming()
 				&& !player.onClimbable()
 				&& !player.noPhysics
-				&& !VanillaModifiers.slowedByBlock(player);
+				&& !VanillaModifiers.slowedByBlock(player, below);
 	}
 }

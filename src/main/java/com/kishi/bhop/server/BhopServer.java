@@ -5,12 +5,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.kishi.bhop.network.BhopStatePayload;
-import com.kishi.bhop.network.BhopStatePayload.Refusal;
 import com.kishi.bhop.network.ServerSettingsPayload;
 import com.kishi.bhop.network.SetBhopStatePayload;
 import com.kishi.bhop.physics.PhysicsSettings;
-import com.kishi.bhop.rules.BhopPolicy;
 import com.kishi.bhop.rules.PlayerRules;
+import com.kishi.bhop.rules.Refusal;
 import com.kishi.bhop.rules.ServerRules;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -153,20 +152,8 @@ public final class BhopServer {
 
 	/** Why a toggle has to be turned down, or {@code null} if it is fine. */
 	private static Refusal refusal(final PlayerRules rules, final PlayerState state, final long now) {
-		if (!rules.allowed()) {
-			return Refusal.NOT_ALLOWED;
-		}
-
-		if (rules.policy() == BhopPolicy.FORCED_ON) {
-			return Refusal.FORCED_ON;
-		}
-
-		if (rules.policy() == BhopPolicy.DISABLED) {
-			return Refusal.DISABLED;
-		}
-
 		final long minGap = Math.max(rules.toggleCooldownTicks() - LATENCY_SLACK_TICKS, MIN_TOGGLE_GAP_TICKS);
-		return now - state.lastToggleTick < minGap ? Refusal.COOLDOWN : null;
+		return rules.refusal(now - state.lastToggleTick < minGap);
 	}
 
 	private static PlayerRules rulesFor(final ServerPlayer player) {

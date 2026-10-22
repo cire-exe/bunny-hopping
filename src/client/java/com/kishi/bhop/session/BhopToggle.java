@@ -6,8 +6,10 @@ import com.kishi.bhop.movement.BhopMode;
 import com.kishi.bhop.network.BhopStatePayload;
 import com.kishi.bhop.network.SetBhopStatePayload;
 import com.kishi.bhop.rules.PlayerRules;
+import com.kishi.bhop.rules.Refusal;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.SharedConstants;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -19,8 +21,6 @@ import net.minecraft.network.chat.Component;
  * mode never waits on a round trip.
  */
 public final class BhopToggle {
-
-	private static final double TICKS_PER_SECOND = 20.0D;
 
 	/** Ticks left before the player may toggle again. */
 	private static int cooldownTicks;
@@ -97,16 +97,17 @@ public final class BhopToggle {
 
 	/** Why the player cannot toggle right now, or {@code null} if they can. */
 	private static Component refusal(final PlayerRules rules) {
-		if (!rules.allowed()) {
-			return ServerSession.notAllowedMessage();
+		final Refusal refusal = rules.refusal(cooldownTicks > 0);
+		if (refusal == null) {
+			return null;
 		}
 
-		return switch (rules.policy()) {
+		return switch (refusal) {
+			case NOT_ALLOWED -> ServerSession.notAllowedMessage();
 			case FORCED_ON -> Component.translatable("bhop.message.refused.forced_on");
 			case DISABLED -> Component.translatable("bhop.message.refused.disabled");
-			case OPTIONAL -> cooldownTicks > 0
-					? Component.translatable("bhop.message.refused.cooldown", "%.1f".formatted(cooldownTicks / TICKS_PER_SECOND))
-					: null;
+			case COOLDOWN -> Component.translatable(
+					"bhop.message.refused.cooldown", "%.1f".formatted((double) cooldownTicks / SharedConstants.TICKS_PER_SECOND));
 		};
 	}
 

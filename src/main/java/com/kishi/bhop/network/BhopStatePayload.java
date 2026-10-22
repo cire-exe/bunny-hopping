@@ -1,5 +1,7 @@
 package com.kishi.bhop.network;
 
+import com.kishi.bhop.rules.Refusal;
+
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -25,24 +27,5 @@ public record BhopStatePayload(boolean enabled, Refusal reason) implements Custo
 	@Override
 	public Type<BhopStatePayload> type() {
 		return TYPE;
-	}
-
-	/** Why the server turned a toggle down. */
-	public enum Refusal {
-		/** The player's permission level is below the server's minimum. */
-		NOT_ALLOWED,
-		/** The server keeps the mode on for everyone. */
-		FORCED_ON,
-		/** The server has the mode switched off for everyone. */
-		DISABLED,
-		/** The player toggled again before the cooldown ran out. */
-		COOLDOWN;
-
-		private static final Refusal[] VALUES = values();
-
-		/** Unknown ids, from a newer server, fall back to the most general reason. */
-		static Refusal byId(final int id) {
-			return id >= 0 && id < VALUES.length ? VALUES[id] : NOT_ALLOWED;
-		}
 	}
 }
